@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity
+            name="App\Entity\ExampleEntity"
+            table="example_table"
+            repository-class="App\Repository\ExampleEntityRepository">
+
+        <id name="id" column="id" type="integer">
+            <generator strategy="AUTO" />
+        </id>
+
+        <field name="name" type="string" column="name" nullable="false"/>
+
+        <field name="createdAt" type="datetime" column="created_at"  nullable="true">
+            <options>
+                <option name="default">CURRENT_TIMESTAMP</option>
+            </options>
+        </field>
+        <field name="updatedAt" type="datetime" column="updated_at" nullable="true">
+            <options>
+                <option name="default">CURRENT_TIMESTAMP</option>
+            </options>
+        </field>
+
+        <lifecycle-callbacks>
+            <lifecycle-callback type="prePersist" method="timestampablePrePersist"/>
+            <lifecycle-callback type="preUpdate" method="timestampablePreUpdate"/>
+        </lifecycle-callbacks>
+    </entity>
+</doctrine-mapping>
