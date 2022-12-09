@@ -15,22 +15,14 @@ class SandBoxCommand extends Command
 
     protected function configure()
     {
-        $this->setName("app:sandbox");
+        $this->setName('app:sandbox');
     }
 
-    /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     *
-     * @return int
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        $this->parser->parseSource(RbcAdapter::init(40));
-
-        $io->success(intdiv(12, 10));
+        var_dump($this->parser->parseSource(RbcAdapter::init(100)));
 
         return Command::SUCCESS;
     }

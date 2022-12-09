@@ -6,15 +6,10 @@ use Doctrine\ORM\EntityManager;
 
 trait EntityManagerInjectionTrait
 {
-    /**
-     * @var EntityManager
-     */
     protected EntityManager $entityManager;
 
     /**
      * @required
-     *
-     * @param EntityManager $entityManager
      *
      * @return $this
      */

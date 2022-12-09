@@ -6,15 +6,10 @@ use App\Parser\Parser;
 
 trait ParserInjectionTrait
 {
-    /**
-     * @var Parser
-     */
     protected Parser $parser;
 
     /**
      * @required
-     *
-     * @param Parser $parser
      *
      * @return $this
      */

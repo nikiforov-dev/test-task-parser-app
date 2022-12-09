@@ -5,11 +5,14 @@ namespace App\Parser\Adapter;
 interface AdapterInterface
 {
     /**
-     * @param int|null $amount
-     *
      * @return $this
      */
     public static function init(?int $amount = null): self;
+
+    /**
+     * @return int|null
+     */
+    public function getAmount(): ?int;
 
     /**
      * @return string
@@ -17,8 +20,6 @@ interface AdapterInterface
     public function getSourceName(): string;
 
     /**
-     * @param array $options
-     *
      * @return string
      */
     public function getSourceMainUrl(): string;
@@ -51,9 +52,22 @@ interface AdapterInterface
     public function extractInnerUrls(string $contents): array;
 
     /**
+     * Should return empty array if it's not possible to parse page properly.
+     *
      * @param string $html
+     * @param string|null $url
      *
      * @return array
      */
-    public function getContents(string $html): array;
+    public function getContents(string $html, ?string $url = null): array;
+
+    /**
+     * @return string[]
+     */
+    public function getAllowedInnerUrlsPatterns(): array;
+
+    /**
+     * @return string
+     */
+    public function getFormClass(): string;
 }

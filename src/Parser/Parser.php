@@ -2,22 +2,22 @@
 
 namespace App\Parser;
 
+use App\DependencyInjection\InjectionTrait\FormFactoryInjectionTrait;
+use App\DependencyInjection\InjectionTrait\FormHandlerInjectionTrait;
 use App\DependencyInjection\InjectionTrait\LoggerInjectionTrait;
 use App\Parser\Adapter\AdapterInterface;
 use App\Parser\Exception\ParserRequestException;
 use App\Parser\Exception\ParsingException;
+use App\Utils\Form\Exception\FormException;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use Symfony\Component\HttpFoundation\Request;
-use Throwable;
 
 class Parser
 {
     use LoggerInjectionTrait;
+    use FormFactoryInjectionTrait;
+    use FormHandlerInjectionTrait;
 
-    /**
-     * @var Client
-     */
     private Client $client;
 
     public function __construct()
@@ -26,9 +26,6 @@ class Parser
     }
 
     /**
-     * @param AdapterInterface $parsingAdapter
-     * @return array
-     *
      * @throws ParserRequestException
      * @throws ParsingException
      */
@@ -38,107 +35,166 @@ class Parser
             $result = $this->parsingAction($parsingAdapter);
         } catch (ParserRequestException $e) {
             throw $e;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $errorMessage = "Can't parse source!";
 
             $this->logException($e, $errorMessage);
 
-            throw new ParsingException($errorMessage . " " . $e->getMessage());
+            throw new ParsingException($errorMessage.' '.$e->getMessage());
         }
 
         return $result;
     }
 
-
+    protected function logException(\Throwable $e, string $message): void
+    {
+        $this->logger->error($message, [
+            'error_message' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'error' => $e,
+        ]);
+    }
 
     /**
-     * @param string $method
-     * @param string $url
-     * @param array $body
-     * @param array $headers
-     * @param array $options
-     * @return string
-     *
-     * @throws Throwable
+     * @throws \Throwable
      * @throws ParserRequestException
      */
     private function makeRequest(string $method, string $url, array $body = [], array $headers = [], array $options = []): string
     {
-        if ($method !== Request::METHOD_GET) {
+        if (Request::METHOD_GET !== $method) {
             $options = array_merge_recursive(
                 $options,
                 [
-                    'body'    => $body,
-                    'headers' => $headers
+                    'body' => $body,
+                    'headers' => $headers,
                 ]
             );
         }
 
         try {
             $response = $this->client->request($method, $url, $options);
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $errorMessage = "Can't make request to source!";
 
             $this->logException($e, $errorMessage);
 
-            throw new ParserRequestException($errorMessage . " " . $e->getMessage());
+            throw new ParserRequestException($errorMessage.' '.$e->getMessage());
         }
 
-
-        if ($response->getStatusCode() !== 200) {
-            $errorMessage = "Bad response status code!";
+        if (200 !== $response->getStatusCode()) {
+            $errorMessage = 'Bad response status code!';
 
             $this->logger->error($errorMessage, [
                 'status_code' => $response->getStatusCode(),
-                'contents'    => $response->getBody()->getContents(),
-                'reason'      => $response->getReasonPhrase(),
+                'contents' => $response->getBody()->getContents(),
+                'reason' => $response->getReasonPhrase(),
             ]);
 
-            throw new ParserRequestException($errorMessage . " " . $response->getStatusCode());
+            throw new ParserRequestException($errorMessage.' '.$response->getStatusCode());
         }
 
         return $response->getBody()->getContents();
     }
 
     /**
-     * @param AdapterInterface $parsingAdapter
-     * @return array
-     *
      * @throws ParserRequestException
-     * @throws Throwable
+     * @throws \Throwable
      */
     private function parsingAction(AdapterInterface $parsingAdapter): array
     {
-        $url     = $parsingAdapter->getSourceMainUrl();
-        $method  = $parsingAdapter->getRequestMethod();
-        $body    = $parsingAdapter->getRequestBody();
-        $headers = $parsingAdapter->getRequestHeaders();
-        $options = $parsingAdapter->getClientOptions();
-
-        $this->logger->debug("Adapter data:", [
-            'url'     => $url,
-            'method'  => $method,
-            'body'    => $body,
-            'headers' => $headers,
-            'options' => $options,
+        $this->logger->debug('Adapter data:', [
+            'amount' => $parsingAdapter->getAmount(),
+            'url' => $parsingAdapter->getSourceMainUrl(),
+            'method' => $parsingAdapter->getRequestMethod(),
+            'body' => $parsingAdapter->getRequestBody(),
+            'headers' => $parsingAdapter->getRequestHeaders(),
+            'options' => $parsingAdapter->getClientOptions(),
+            'allowedPatterns' => $parsingAdapter->getAllowedInnerUrlsPatterns(),
         ]);
 
-        $contents  = $this->makeRequest($method, $url, $body, $headers);
+        $contents = $this->makeRequest(
+            $parsingAdapter->getRequestMethod(),
+            $parsingAdapter->getSourceMainUrl(),
+            $parsingAdapter->getRequestBody(),
+            $parsingAdapter->getRequestHeaders(),
+            $parsingAdapter->getClientOptions()
+        );
+
         $innerUrls = $parsingAdapter->extractInnerUrls($contents);
 
-        return [];
+        $allowedInnerUrls = $this->filterUrls($parsingAdapter->getAllowedInnerUrlsPatterns(), $innerUrls);
+
+        return $this->processInnerUrls($parsingAdapter, $allowedInnerUrls);
+    }
+
+    private function filterUrls(array $allowedPatterns, array $innerUrls): array
+    {
+        if (empty($allowedPatterns)) {
+            return $innerUrls;
+        }
+
+        $allowedInnerUrls = [];
+
+        foreach ($innerUrls as $innerUrl) {
+            foreach ($allowedPatterns as $allowedPattern) {
+                if (!preg_match($allowedPattern, $innerUrl)) {
+                    continue;
+                }
+
+                $allowedInnerUrls[] = $innerUrl;
+            }
+        }
+
+        return $allowedInnerUrls;
     }
 
     /**
-     * @param Throwable $e
-     * @param string $message
+     * @throws ParserRequestException
+     * @throws \Throwable
      */
-    protected function logException(Throwable $e, string $message): void
+    private function processInnerUrls(AdapterInterface $parsingAdapter, array $innerUrls): array
     {
-        $this->logger->error($message, [
-            'error_message' => $e->getMessage(),
-            'error_code'    => $e->getCode(),
-            'error'         => $e
-        ]);
+        $result = [];
+
+        $counter = 0;
+        foreach ($innerUrls as $innerUrl) {
+            if (!is_null($parsingAdapter->getAmount()) && $counter == $parsingAdapter->getAmount()) {
+                break;
+            }
+
+            $responseContent = $this->makeRequest(
+                $parsingAdapter->getRequestMethod(),
+                $innerUrl,
+                $parsingAdapter->getRequestBody(),
+                $parsingAdapter->getRequestHeaders(),
+                $parsingAdapter->getClientOptions()
+            );
+
+            $resultItem = $parsingAdapter->getContents($responseContent, $innerUrl);
+
+            if (empty($resultItem)) {
+                $this->logger->alert('Cant parse page!', [
+                    'url' => $innerUrl,
+                ]);
+
+                continue;
+            }
+
+            $result[] = $this->createObjectFromArray($parsingAdapter, $resultItem);
+
+            ++$counter;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @throws FormException
+     */
+    private function createObjectFromArray(AdapterInterface $adapter, array $item): object
+    {
+        $form = $this->formFactory->create($adapter->getFormClass());
+
+        return $this->formHandler->handleForm($form, $item);
     }
 }

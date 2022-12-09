@@ -8,25 +8,19 @@ use Doctrine\ORM\Mapping as ORM;
 trait TimestampableTrait
 {
     /**
-     * @var DateTime|null
-     *
      * @ORM\Column(name="created_at", type="datetime")
      */
-    protected ?DateTime $createdAt;
+    protected ?\DateTime $createdAt;
 
     /**
-     * @var DateTime|null
-     *
      * @ORM\Column(name="updated_at", type="datetime")
      */
-    protected ?DateTime $updatedAt;
+    protected ?\DateTime $updatedAt;
 
     /**
-     * @param DateTime $createdAt
-     *
      * @return $this
      */
-    public function setCreatedAt(DateTime $createdAt)
+    public function setCreatedAt(\DateTime $createdAt)
     {
         $this->createdAt = $createdAt;
 
@@ -34,7 +28,7 @@ trait TimestampableTrait
     }
 
     /**
-     * @return DateTime
+     * @return \DateTime
      */
     public function getCreatedAt()
     {
@@ -42,11 +36,9 @@ trait TimestampableTrait
     }
 
     /**
-     * @param DateTime $updatedAt
-     *
      * @return $this
      */
-    public function setUpdatedAt(DateTime $updatedAt)
+    public function setUpdatedAt(\DateTime $updatedAt)
     {
         $this->updatedAt = $updatedAt;
 
@@ -54,7 +46,7 @@ trait TimestampableTrait
     }
 
     /**
-     * @return DateTime
+     * @return \DateTime
      */
     public function getUpdatedAt()
     {
@@ -66,8 +58,8 @@ trait TimestampableTrait
      */
     public function timestampablePrePersist(): void
     {
-        $this->createdAt = new DateTime();
-        $this->updatedAt = new DateTime();
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
     }
 
     /**
@@ -75,11 +67,11 @@ trait TimestampableTrait
      */
     public function timestampablePreUpdate(): void
     {
-        $this->updatedAt = new DateTime();
+        $this->updatedAt = new \DateTime();
     }
 
     /**
-     * @return int|null
+     * @return null|int
      *
      * @psalm-suppress DocblockTypeContradiction
      * @psalm-suppress RedundantConditionGivenDocblockType
@@ -90,7 +82,7 @@ trait TimestampableTrait
     }
 
     /**
-     * @return int|null
+     * @return null|int
      *
      * @psalm-suppress DocblockTypeContradiction
      * @psalm-suppress RedundantConditionGivenDocblockType

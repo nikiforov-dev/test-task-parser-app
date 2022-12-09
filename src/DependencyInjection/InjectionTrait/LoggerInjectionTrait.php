@@ -6,15 +6,10 @@ use Psr\Log\LoggerInterface;
 
 trait LoggerInjectionTrait
 {
-    /**
-     * @var LoggerInterface
-     */
     protected LoggerInterface $logger;
 
     /**
      * @required
-     *
-     * @param LoggerInterface $logger
      *
      * @return $this
      */
