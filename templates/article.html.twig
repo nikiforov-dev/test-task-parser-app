@@ -1,0 +1,26 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Article{% endblock %}
+
+{% block body %}
+<br>
+<div class="container" style="border-style: solid; border-width: 1px; width: 50%">
+    <br>
+    {% if  article.imageUrl is not null%}
+        <img src="{{ article.imageUrl }}" alt="Image" class="container center"/>
+    {% endif %}
+    {% if  article.title is not null%}
+    <h1>{{ article.title }}</h1>
+    {% endif %}
+    <div class>
+        <div>{{ article.content|raw }}</div>
+    </div>
+    <hr>
+    <div class="container">
+        <br>
+        <a class="btn btn-success" href="/">На главную</a>
+        <br>
+        <br>
+    </div>
+</div>
+{% endblock %}
