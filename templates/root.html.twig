@@ -1,0 +1,135 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Parser{% endblock %}
+
+{% block body %}
+<br>
+<div class="container bordered" style="width: 50%">
+    <br>
+
+    <form
+        id="settings"
+        class="container-fluid needs-validation"
+    >
+        <label for="form-select" class="form-label">Парсер:</label>
+        <select id="parser" class="form-control form-select" name="parser">
+            {% for key,possible_parser in possible_parsers %}
+                <option value="{{ key }}">{{ possible_parser }}</option>
+            {% endfor %}
+        </select>
+        <div class="invalid-feedback">Парсер не выбран</div>
+        <br>
+        <div class="input-group">
+            <span class="input-group-text">Количество</span>
+            <input id="amount" name="amount" type="number" min="1" max="100" class="form-control" value="15">
+            <div class="invalid-feedback">Количество не указано</div>
+        </div>
+        <br>
+        <button id="button" class="btn btn-success">
+            Начать парсинг
+            <span id="spinner" class="spinner-border spinner-border-sm" style="display: none"></span>
+        </button>
+        </form>
+
+    <br><hr><br>
+
+    <div id="content" class="container-fluid">
+        {% for data_item in data_array %}
+            <div class="container-fluid" style="background-color: #ffffff; border-style: solid; border-radius: 10px; border-width: 1px">
+                <h3>{{ data_item['title'] }}</h3>
+                <div>
+                    {{ data_item['content']|raw }} ...
+                </div>
+                <hr>
+                <a class="btn btn-success" href="/article/{{ data_item['id'] }}">Подробнее</a>
+                <br><br>
+            </div>
+            <br>
+        {% endfor %}
+    </div>
+    <br>
+</div>
+{% endblock %}
+
+{% block logic %}
+<script type="text/javascript">
+    $(document).ready(function ($) {
+        console.log("AAAAAAa")
+
+        let $button = $('#button');
+
+        $button.click(function (e) {
+            e.preventDefault();
+
+            $('.form-control').removeClass('is-invalid')
+
+            let validParser = false;
+            let validAmount = false;
+
+            let parser = $('#parser').val()
+            let amount = $('#amount').val()
+
+            if (parser === "") {
+                $("#parser").addClass('is-invalid')
+            } else {
+                validParser = true;
+            }
+
+            if (amount === "") {
+                $("#amount").addClass('is-invalid')
+            } else {
+                validAmount = true;
+            }
+
+            if (validAmount === false || validParser === false) {
+                return false;
+            }
+
+            let $spinner = $('#spinner');
+
+            $spinner.show()
+            $button.prop('disabled', true)
+
+            $.ajax({
+                type: 'GET',
+                url: '/parse?' + $("#settings").serialize(),
+                success: function (data_array) {
+                    console.log(data_array)
+
+                    let htmlString = "";
+
+                    for (let data_item of data_array) {
+                        htmlString += '<div class="container-fluid" style="background-color: #ffffff; border-style: solid; border-radius: 10px; border-width: 1px">' +
+                        `<h3>${data_item['title']}</h3>` +
+                        "<div>" +
+                        `${data_item['content']} ...` +
+                        "</div>" +
+                        "<hr>" +
+                        `<a class="btn btn-success" href="/article/${data_item['id']}">Подробнее</a>` +
+                        "<br><br>" +
+                        "</div>" +
+                        "<br>"
+                    }
+
+                    $('#content').html(htmlString)
+
+                    $spinner.hide()
+                    $button.prop('disabled', false)
+                },
+                error: function (data_array) {
+                    $spinner.hide()
+                    $button.enable()
+
+                    if (data_array !== undefined && data_array['error'] !== undefined) {
+                        alert(data_array['error'])
+
+                        return
+                    }
+
+                    alert("Undefined error")
+                }
+            });
+        })
+    });
+</script>
+{% endblock %}

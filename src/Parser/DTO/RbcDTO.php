@@ -4,34 +4,16 @@ namespace App\Parser\DTO;
 
 class RbcDTO
 {
-    /**
-     * @var string|null
-     */
     private ?string $url = null;
 
-    /**
-     * @var string
-     */
     private string $hash;
 
-    /**
-     * @var string|null
-     */
     private ?string $title = null;
 
-    /**
-     * @var string
-     */
     private string $content;
 
-    /**
-     * @var string|null
-     */
     private ?string $imageUrl = null;
 
-    /**
-     * @return string
-     */
     public function getHash(): string
     {
         return $this->hash;

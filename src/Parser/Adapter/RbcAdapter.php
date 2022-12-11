@@ -6,7 +6,6 @@ use App\Parser\Exception\ParsingException;
 use App\Parser\Form\RbcForm;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
-use Throwable;
 
 class RbcAdapter implements AdapterInterface
 {
@@ -53,7 +52,7 @@ class RbcAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      *
-     * @throws Throwable
+     * @throws \Throwable
      */
     public function getSourceMainUrl(): string
     {
@@ -65,7 +64,7 @@ class RbcAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      *
-     * @throws Throwable
+     * @throws \Throwable
      */
     public function extractInnerUrls(string $contents): array
     {
@@ -116,13 +115,13 @@ class RbcAdapter implements AdapterInterface
             return $node->text();
         });
 
-        $overview = trim(implode("\n", $overview));
+        $overview = trim(implode('<br>', $overview));
 
         $paragraph = $articleTextNode->filter('p')->each(function (Crawler $node) {
             return $node->text();
         });
 
-        $paragraph = trim(implode("\n\n", $paragraph));
+        $paragraph = trim(implode('<br><br>', $paragraph));
 
         if (!empty($overview)) {
             $text = "{$overview}\n\n{$paragraph}";
@@ -215,12 +214,6 @@ class RbcAdapter implements AdapterInterface
         return $url;
     }
 
-    /**
-     * @param Crawler $domCrawler
-     * @param string $url
-     *
-     * @return array
-     */
     private function processExceptionUrl(Crawler $domCrawler, string $url): array
     {
         $title = $domCrawler->filter('header.article-entry > h1')->each(function (Crawler $node) {
@@ -237,7 +230,7 @@ class RbcAdapter implements AdapterInterface
             return $node->text();
         });
 
-        $text = trim(implode($text));
+        $text = trim(implode('<br><br>', $text));
 
         $imageUrl = $domCrawler->filter('div[itemprop="image"] > link')->each(function (Crawler $node) {
             return $node->attr('href');
@@ -254,15 +247,6 @@ class RbcAdapter implements AdapterInterface
         return $this->prepareResult($url, $hash, $title, $text, $imageUrl);
     }
 
-    /**
-     * @param string $url
-     * @param string $hash
-     * @param string $title
-     * @param string $text
-     * @param mixed $imageUrl
-     *
-     * @return array
-     */
     private function prepareResult(string $url, string $hash, string $title, string $text, mixed $imageUrl): array
     {
         return [
